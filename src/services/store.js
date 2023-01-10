@@ -21,6 +21,10 @@ const store = observable({
 
   entrance: window.PLACES['Entrada']['Principal'],
 
+  neighborhood: null,
+
+  house: null,
+
 })
 
 const StoreContext = createContext()

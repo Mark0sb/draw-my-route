@@ -1,7 +1,7 @@
 /* global google */
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { observer } from 'mobx-react-lite';
-import { StoreProvider, useStore } from '../../services/store';
+import { useStore } from '../../services/store';
 import { DirectionsRenderer, GoogleMap, withGoogleMap } from "react-google-maps";
 
 import './home.scss'
@@ -10,6 +10,8 @@ const Home = observer(() => {
   const store = useStore();
 
   const travelMode = window.google.maps.TravelMode.DRIVING
+
+  const houseRef = useRef(null)
 
   useEffect(() => {
 
@@ -20,7 +22,6 @@ const Home = observer(() => {
           origin: store.origin,
           destination: store.destination,
           travelMode: travelMode,
-          // waypoints: waypoints
         },
         (result, status) => {
           console.log(result)
@@ -53,6 +54,12 @@ const Home = observer(() => {
     position()
   }, [])
 
+  useEffect(() => {
+    if(store.origin && store.neighborhood && store.house) {
+      store.destination = store.places.Barrios[store.neighborhood][store.house]
+    }
+  }, [store.orign, store.neighborhood, store.house])
+
   const GoogleMapExample = withGoogleMap(props => (
     <GoogleMap
       defaultCenter={store.origin}
@@ -71,26 +78,46 @@ const Home = observer(() => {
     }
   }
 
+  const handleSetNeighborhood = (event) => {
+    store.directions = null
+    store.neighborhood = event.target.value
+    store.house = null
+    houseRef.current.selectedIndex = "0"
+  }
+
   const handleSetDestination = (event) => {
-    store.destination = store.places['Los Tilos'][event.target.value]
+    store.house = event.target.value
   }
 
   return (
     <div className="home-container">
       <div className="options-container">
+        <h1>Origen</h1>
         <select onChange={handleSetOrigin}>
           <option disabled selected>Elige el origen</option>
           <option value={'CURRENT_POSITION'} className='option'>Tu ubicación Actual</option>
           <option value={'ENTRANCE'} className='option'>La entrada del Barrio</option>
         </select>
-        <select onChange={handleSetDestination}>
-          <option disabled selected>Elige el destino</option>
+        <h1>Destino</h1>
+        <select onChange={handleSetNeighborhood}>
+          <option disabled selected>Elige el Barrio</option>
           {
-            Object.entries(store.places['Los Tilos']).map(([key, value]) =>
-              <option value={key} className='option'>Los Tilos {key}</option>
+            Object.entries(store.places['Barrios']).map(([key, value]) =>
+              <option value={key} className='option'>{key}</option>
             )
           }
         </select>
+        {
+          store.neighborhood &&
+          <select onChange={handleSetDestination} ref={houseRef}>
+            <option disabled selected>Elige el lote</option>
+            {
+              Object.entries(store.places.Barrios[store.neighborhood]).map(([key, value]) =>
+                <option value={key} className='option'>{store.neighborhood} {key}</option>
+              )
+            }
+          </select>
+        }
       </div>
       <GoogleMapExample
         containerElement={<div className="map-container" />}
